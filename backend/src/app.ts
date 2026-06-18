@@ -28,7 +28,7 @@ app.use(helmet({
   crossOriginResourcePolicy: false, // Allows frontend to access local static PDF files/images
 }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.NODE_ENV === 'development' ? true : (process.env.FRONTEND_URL || 'http://localhost:5173'),
   credentials: true,
 }));
 app.use(express.json());
