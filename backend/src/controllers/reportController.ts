@@ -172,8 +172,8 @@ export const exportDonationReportPDF = async (req: Request, res: Response, next:
     doc.pipe(res);
 
     // --- HEADER ---
-    doc.fillColor('#be490e').fontSize(22).font('Helvetica-Bold').text('Shree Sawariya Seth Gaushala', { align: 'center' });
-    doc.fillColor('#475569').fontSize(10).font('Helvetica').text('Cow Seva Trust - Chittorgarh, Rajasthan', { align: 'center' });
+    doc.fillColor('#be490e').fontSize(22).font('Helvetica-Bold').text('Shree Sawariya Seth Gau Seva Samiti', { align: 'center' });
+    doc.fillColor('#475569').fontSize(10).font('Helvetica').text('Gawala Gau Seva Dal, Ganesh Road, Devali (Tonk), Rajasthan', { align: 'center' });
     doc.moveDown(1);
     
     doc.fillColor('#0f172a').fontSize(14).font('Helvetica-Bold').text(`Donation Report Summary (${range.toUpperCase()})`);

@@ -113,10 +113,10 @@ export const createDonor = async (req: AuthenticatedRequest, res: Response, next
       fullName: validatedData.fullName,
       mobileNumber: validatedData.mobileNumber || '9999999999',
       email: validatedData.email || undefined,
-      address: validatedData.address || 'Gaushala Address',
-      city: validatedData.city || 'Chittorgarh',
+      address: validatedData.address || 'Ganesh Road',
+      city: validatedData.city || 'Devali',
       state: validatedData.state || 'Rajasthan',
-      pincode: validatedData.pincode || '312001',
+      pincode: validatedData.pincode || '304804',
       panNumber: validatedData.panNumber || undefined,
       ...aadhaarEncryptedData,
       donationPreference: validatedData.donationPreference || undefined,
@@ -150,10 +150,10 @@ export const updateDonor = async (req: AuthenticatedRequest, res: Response, next
     donor.fullName = validatedData.fullName;
     donor.mobileNumber = validatedData.mobileNumber || '9999999999';
     donor.email = validatedData.email || undefined;
-    donor.address = validatedData.address || 'Gaushala Address';
-    donor.city = validatedData.city || 'Chittorgarh';
+    donor.address = validatedData.address || 'Ganesh Road';
+    donor.city = validatedData.city || 'Devali';
     donor.state = validatedData.state || 'Rajasthan';
-    donor.pincode = validatedData.pincode || '312001';
+    donor.pincode = validatedData.pincode || '304804';
     donor.panNumber = validatedData.panNumber || undefined;
     donor.donationPreference = validatedData.donationPreference || undefined;
     donor.notes = validatedData.notes || undefined;
