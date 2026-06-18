@@ -17,6 +17,54 @@ interface PDFReceiptInput {
 }
 
 /**
+ * Helper to write mixed Devanagari and Latin text in PDFKit
+ */
+function writeMixedText(
+  doc: PDFKit.PDFDocument,
+  text: string,
+  x: number,
+  y: number,
+  options: {
+    isBold?: boolean;
+    width?: number;
+    height?: number;
+    ellipsis?: boolean;
+    align?: string;
+  } = {}
+) {
+  // Regex matches segments of Devanagari characters (and whitespace between them)
+  // or segments of non-Devanagari characters.
+  const regex = /([\u0900-\u097F\s]+|[^\u0900-\u097F]+)/g;
+  const matches = text.match(regex) || [text];
+  const isBold = options.isBold || false;
+
+  for (let i = 0; i < matches.length; i++) {
+    const part = matches[i];
+    const isDevan = /[\u0900-\u097F]/.test(part);
+    const font = isDevan
+      ? (isBold ? 'Devanagari-Bold' : 'Devanagari')
+      : (isBold ? 'Helvetica-Bold' : 'Helvetica');
+
+    doc.font(font);
+    const isLast = i === matches.length - 1;
+
+    const textOptions: any = {
+      continued: !isLast,
+    };
+    if (options.width !== undefined) textOptions.width = options.width;
+    if (options.height !== undefined) textOptions.height = options.height;
+    if (options.ellipsis !== undefined) textOptions.ellipsis = options.ellipsis;
+    if (options.align !== undefined) textOptions.align = options.align;
+
+    if (i === 0) {
+      doc.text(part, x, y, textOptions);
+    } else {
+      doc.text(part, textOptions);
+    }
+  }
+}
+
+/**
  * Generates a professional traditional Indian PDF receipt matching the physical design
  */
 export async function generateReceiptPDF(data: PDFReceiptInput): Promise<string> {
@@ -78,9 +126,19 @@ export async function generateReceiptPDF(data: PDFReceiptInput): Promise<string>
       doc.font('Devanagari').fontSize(10).fillColor('#374151');
       doc.text('संरक्षक - ग्वाला गौ सेवा दल , गणेश रोड़, देवली (टोंक)', 80, 57, { width: doc.page.width - 160, align: 'center' });
 
-      // Registration Number
-      doc.font('Devanagari-Bold').fontSize(8.5).fillColor('#4b5563');
-      doc.text('पंजीयन संख्या / REG. NO. COOP/2023/TONK/205754', 80, 71, { width: doc.page.width - 160, align: 'center' });
+      // Registration Number (Mixed Font Centering)
+      const hindiReg = 'पंजीयन संख्या / ';
+      const englishReg = 'REG. NO. COOP/2023/TONK/205754';
+      
+      doc.font('Devanagari-Bold').fontSize(8.5);
+      const w1 = doc.widthOfString(hindiReg);
+      doc.font('Helvetica-Bold').fontSize(8.5);
+      const w2 = doc.widthOfString(englishReg);
+      
+      const regStartX = (doc.page.width - (w1 + w2)) / 2;
+      doc.font('Devanagari-Bold').fillColor('#4b5563')
+         .text(hindiReg, regStartX, 71, { continued: true })
+         .font('Helvetica-Bold').text(englishReg);
 
       // Divider Line
       doc.moveTo(22, 85).lineTo(doc.page.width - 22, 85).lineWidth(1.2).strokeColor('#be123c').stroke();
@@ -102,7 +160,10 @@ export async function generateReceiptPDF(data: PDFReceiptInput): Promise<string>
       let y = 118;
       doc.font('Devanagari').fontSize(11).fillColor('#374151');
       doc.text('श्रीमान्', 25, y);
-      doc.font('Devanagari-Bold').fontSize(12).fillColor('#1e1b4b').text(data.donorName, 80, y - 1);
+      
+      // Mixed Devanagari/Latin rendering for donorName
+      writeMixedText(doc, data.donorName, 80, y - 1, { isBold: true });
+      
       // Underline for name
       doc.moveTo(75, y + 14).lineTo(doc.page.width - 25, y + 14).lineWidth(0.5).dash(2, { space: 2 }).strokeColor('#9ca3af').stroke().undash();
 
@@ -110,11 +171,15 @@ export async function generateReceiptPDF(data: PDFReceiptInput): Promise<string>
       y += 24;
       doc.font('Devanagari').fontSize(11).fillColor('#374151');
       doc.text('निवासी', 25, y);
-      doc.font('Devanagari-Bold').fontSize(11.5).fillColor('#1e1b4b').text(data.address || 'देवली', 80, y - 1, { width: 140, height: 18, ellipsis: true });
+      
+      // Mixed Devanagari/Latin rendering for address
+      writeMixedText(doc, data.address || 'देवली', 80, y - 1, { width: 140, height: 18, ellipsis: true, isBold: true });
       
       doc.font('Devanagari').fillColor('#374151').text('सेरूपयें', 230, y);
       const words = numberToWords(data.amount);
-      doc.font('Devanagari-Bold').fontSize(11).fillColor('#1e1b4b').text(words, 280, y - 1, { width: doc.page.width - 305, height: 18, ellipsis: true });
+      
+      // Mixed Devanagari/Latin rendering for words
+      writeMixedText(doc, words, 280, y - 1, { width: doc.page.width - 305, height: 18, ellipsis: true, isBold: true });
       
       // Underlines for resident and words
       doc.moveTo(75, y + 14).lineTo(220, y + 14).lineWidth(0.5).dash(2, { space: 2 }).strokeColor('#9ca3af').stroke().undash();
@@ -138,7 +203,9 @@ export async function generateReceiptPDF(data: PDFReceiptInput): Promise<string>
           default: return cat;
         }
       };
-      doc.font('Devanagari-Bold').fontSize(12).fillColor('#1e1b4b').text(getCategoryHindi(data.category), 80, y - 1);
+      
+      // Mixed Devanagari/Latin rendering for category
+      writeMixedText(doc, getCategoryHindi(data.category), 80, y - 1, { isBold: true });
       
       doc.font('Devanagari').fontSize(11).fillColor('#374151').text('हेतु सधन्यवाद प्राप्त हुयें।', doc.page.width - 170, y);
       // Underline for category
@@ -163,10 +230,23 @@ export async function generateReceiptPDF(data: PDFReceiptInput): Promise<string>
       // Simulated signature
       doc.font('Courier-BoldOblique').fontSize(12).fillColor('#1e1b4b').text('Shaly', doc.page.width - 95, 205);
 
-      // --- 9. CONTACT LINE ---
+      // --- 9. CONTACT LINE (Mixed Font Centering) ---
       doc.moveTo(22, 240).lineTo(doc.page.width - 22, 240).lineWidth(0.5).strokeColor('#cbd5e1').stroke();
-      doc.font('Devanagari').fontSize(8).fillColor('#6b7280');
-      doc.text('📞 संपर्क सूत्र (टोंक गौशाला): 8905859570, 8003445051, 9119284593, 9529266713, 9636098819, 9251827092', 25, 246, { align: 'center', width: doc.page.width - 50 });
+      
+      const contactLabel = 'संपर्क सूत्र (टोंक गौशाला): ';
+      const contactNumbers = '8905859570, 8003445051, 9119284593, 9529266713, 9636098819, 9251827092';
+      
+      doc.font('Devanagari').fontSize(8);
+      const cw1 = doc.widthOfString(contactLabel);
+      doc.font('Helvetica').fontSize(8);
+      const cw2 = doc.widthOfString(contactNumbers);
+      
+      const cTotalWidth = cw1 + cw2;
+      const cStartX = (doc.page.width - cTotalWidth) / 2;
+      
+      doc.font('Devanagari').fillColor('#6b7280')
+         .text(contactLabel, cStartX, 246, { continued: true })
+         .font('Helvetica').text(contactNumbers);
 
       doc.end();
 
