@@ -21,6 +21,7 @@ import reportRoutes from './routes/reportRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 // Security & Middleware
