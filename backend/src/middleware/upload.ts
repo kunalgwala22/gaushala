@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
 });
 
 // File filter (accept only images)
-const fileFilter = (req: any, file: Express.Rayload | any, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: any, file: any, cb: multer.FileFilterCallback) => {
   const allowedTypes = /jpeg|jpg|png/;
   const mimeType = allowedTypes.test(file.mimetype);
   const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());

@@ -107,10 +107,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     const tokenPayload = {
-      userId: (user._id as string).toString(),
+      userId: user._id.toString(),
       email: user.email,
       role: user.role,
-      donorId: user.donorId ? (user.donorId as string).toString() : undefined,
+      donorId: user.donorId ? user.donorId.toString() : undefined,
     };
 
     const { accessToken, refreshToken } = generateTokens(tokenPayload);

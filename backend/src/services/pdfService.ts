@@ -17,7 +17,7 @@ interface PDFReceiptInput {
 }
 
 /**
- * Generates a professional PDF receipt for a donation and returns its file path
+ * Generates a professional traditional Indian PDF receipt matching the physical design
  */
 export async function generateReceiptPDF(data: PDFReceiptInput): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -29,125 +29,147 @@ export async function generateReceiptPDF(data: PDFReceiptInput): Promise<string>
 
       const fileName = `RECEIPT_${data.receiptNumber.replace(/\//g, '_')}.pdf`;
       const filePath = path.join(dirPath, fileName);
-      const doc = new PDFDocument({ size: 'A5', layout: 'landscape', margin: 30 });
+      const doc = new PDFDocument({ size: 'A5', layout: 'landscape', margin: 25 });
 
       const writeStream = fs.createWriteStream(filePath);
       doc.pipe(writeStream);
 
-      // --- STYLISH BORDERS ---
+      // Register Devanagari Fonts
+      const regularFontPath = '/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf';
+      const boldFontPath = '/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf';
+      
+      doc.registerFont('Devanagari', regularFontPath);
+      doc.registerFont('Devanagari-Bold', boldFontPath);
+
+      // --- 1. PINK PAPER BACKGROUND ---
+      // Draw background fill for the entire A5 page
+      doc.rect(0, 0, doc.page.width, doc.page.height).fill('#fdf2f8');
+
+      // --- 2. CRIMSON BORDERS ---
       // Outer border
-      doc.rect(15, 15, doc.page.width - 30, doc.page.height - 30).lineWidth(2).strokeColor('#be490e').stroke(); // Saffron outline
+      doc.rect(15, 15, doc.page.width - 30, doc.page.height - 30).lineWidth(2).strokeColor('#881337').stroke();
       // Inner border
-      doc.rect(19, 19, doc.page.width - 38, doc.page.height - 38).lineWidth(0.5).strokeColor('#e56410').stroke();
+      doc.rect(18, 18, doc.page.width - 36, doc.page.height - 36).lineWidth(0.5).strokeColor('#be123c').stroke();
 
-      // --- HEADER ---
-      // Logo placeholder (drawn cow shape or symbol)
-      doc.fillColor('#be490e');
-      doc.ellipse(55, 50, 25, 20).fill();
-      doc.fillColor('#ffffff').fontSize(14).text('🐄', 43, 40);
+      // --- 3. CORNER STAMP IMAGES ---
+      // Left stamp: Shree Sawaliya Seth
+      const sawaliyaSethPath = path.join(__dirname, '../assets/sawaliya_seth.png');
+      if (fs.existsSync(sawaliyaSethPath)) {
+        doc.image(sawaliyaSethPath, 25, 23, { width: 55, height: 55 });
+      }
 
-      // Trust Title
-      doc.fillColor('#be490e')
-         .fontSize(18)
-         .font('Helvetica-Bold')
-         .text('SHREE SAWARIYA SETH GAUSHALA', 90, 35);
+      // Right stamp: Cow Logo
+      const cowLogoPath = path.join(__dirname, '../assets/cow_logo.png');
+      if (fs.existsSync(cowLogoPath)) {
+        doc.image(cowLogoPath, doc.page.width - 80, 23, { width: 55, height: 55 });
+      }
 
-      // Trust Subtitle/Reg Info
-      doc.fillColor('#475569')
-         .fontSize(8)
-         .font('Helvetica')
-         .text('Reg No: SSSG/RAJ/2022-7890 | Registered Gau Seva Trust', 90, 55)
-         .text('Address: Near Seth Ji Temple, Chittorgarh, Rajasthan - 312001 | Contact: +91 98765 43210', 90, 68);
+      // --- 4. TOP RELIGIOUS SLOGANS ---
+      doc.font('Devanagari-Bold').fontSize(8.5).fillColor('#be123c');
+      doc.text('|| जय श्री राम ||', 85, 24, { width: 100, align: 'center' });
+      doc.text('|| श्री गणेशाय नमः ||', (doc.page.width - 150) / 2, 24, { width: 150, align: 'center' });
+      doc.text('|| जय माता दी ||', doc.page.width - 185, 24, { width: 100, align: 'center' });
+
+      // --- 5. MAIN HEADERS ---
+      // Title
+      doc.fontSize(19).fillColor('#881337').text('श्री सांवलिया सेठ गौ सेवा समिति', 80, 36, { width: doc.page.width - 160, align: 'center' });
+      
+      // Subtitle
+      doc.font('Devanagari').fontSize(10).fillColor('#374151');
+      doc.text('संरक्षक - ग्वाला गौ सेवा दल, गणेश रोड़, देवली (टोंक)', 80, 57, { width: doc.page.width - 160, align: 'center' });
+
+      // Registration Number
+      doc.font('Devanagari-Bold').fontSize(8.5).fillColor('#4b5563');
+      doc.text('पंजीयन संख्या/REG.NO.COOP/2023/TONK/205754', 80, 71, { width: doc.page.width - 160, align: 'center' });
 
       // Divider Line
-      doc.moveTo(25, 85).lineTo(doc.page.width - 25, 85).lineWidth(1).strokeColor('#cbd5e1').stroke();
+      doc.moveTo(22, 85).lineTo(doc.page.width - 22, 85).lineWidth(1.2).strokeColor('#be123c').stroke();
 
-      // --- RECEIPT & DATE INFO ---
-      doc.fillColor('#be490e')
-         .fontSize(12)
-         .font('Helvetica-Bold')
-         .text('DONATION RECEIPT', 30, 95);
+      // --- 6. RECEIPT NUMBER & DATE ROW ---
+      // Receipt Number (रसीद नं.)
+      const seqStr = data.receiptNumber.split('/').pop() || data.receiptNumber;
+      doc.font('Devanagari-Bold').fontSize(12).fillColor('#be123c');
+      doc.text('रसीद नं.', 25, 93);
+      doc.font('Helvetica-Bold').fontSize(13).text(seqStr, 75, 92);
 
-      doc.fillColor('#475569')
-         .fontSize(9)
-         .font('Helvetica')
-         .text(`Receipt No: `, 30, 115)
-         .font('Helvetica-Bold').fillColor('#0f172a').text(data.receiptNumber, 90, 115)
-         
-         .font('Helvetica').fillColor('#475569').text(`Date: `, doc.page.width - 150, 115)
-         .font('Helvetica-Bold').fillColor('#0f172a').text(new Date(data.date).toLocaleDateString('en-IN'), doc.page.width - 110, 115);
+      // Date (दिनांक)
+      doc.font('Devanagari-Bold').fontSize(11).fillColor('#374151');
+      doc.text('दिनांक:', doc.page.width - 150, 93);
+      doc.font('Helvetica-Bold').fontSize(12).fillColor('#0f172a').text(new Date(data.date).toLocaleDateString('en-IN'), doc.page.width - 110, 92);
 
-      // --- DONOR PARTICULARS ---
-      doc.rect(30, 135, (doc.page.width - 70) / 2 - 10, 105).lineWidth(0.5).strokeColor('#cbd5e1').stroke();
+      // --- 7. HANDWRITTEN-STYLE PARTICULARS ---
+      // Field: श्रीमान् (Donor Name)
+      let y = 118;
+      doc.font('Devanagari').fontSize(11).fillColor('#374151');
+      doc.text('श्रीमान्', 25, y);
+      doc.font('Devanagari-Bold').fontSize(12).fillColor('#1e1b4b').text(data.donorName, 80, y - 1);
+      // Underline for name
+      doc.moveTo(75, y + 14).lineTo(doc.page.width - 25, y + 14).lineWidth(0.5).dash(2, { space: 2 }).strokeColor('#9ca3af').stroke().undash();
+
+      // Field: निवासी (Address) & सेरूपयें (Amount in Words)
+      y += 24;
+      doc.font('Devanagari').fontSize(11).fillColor('#374151');
+      doc.text('निवासी', 25, y);
+      doc.font('Devanagari-Bold').fontSize(11.5).fillColor('#1e1b4b').text(data.address || 'देवली', 80, y - 1, { width: 140, height: 18, ellipsis: true });
       
-      // Header for Donor Box
-      doc.fillColor('#be490e').font('Helvetica-Bold').fontSize(9).text('Donor Details', 35, 142);
+      doc.font('Devanagari').fillColor('#374151').text('सेरूपयें', 230, y);
+      const words = numberToWords(data.amount);
+      doc.font('Devanagari-Bold').fontSize(11).fillColor('#1e1b4b').text(words, 280, y - 1, { width: doc.page.width - 305, height: 18, ellipsis: true });
       
-      let donorTextY = 158;
-      doc.fillColor('#475569').font('Helvetica').fontSize(8.5);
-      doc.text(`Name:`, 35, donorTextY);
-      doc.fillColor('#0f172a').font('Helvetica-Bold').text(data.donorName, 80, donorTextY);
+      // Underlines for resident and words
+      doc.moveTo(75, y + 14).lineTo(220, y + 14).lineWidth(0.5).dash(2, { space: 2 }).strokeColor('#9ca3af').stroke().undash();
+      doc.moveTo(275, y + 14).lineTo(doc.page.width - 25, y + 14).lineWidth(0.5).dash(2, { space: 2 }).strokeColor('#9ca3af').stroke().undash();
+
+      // Field: बाबत (Category/Purpose) & Thank You Slogan
+      y += 24;
+      doc.font('Devanagari').fontSize(11).fillColor('#374151');
+      doc.text('बाबत', 25, y);
       
-      donorTextY += 16;
-      doc.fillColor('#475569').font('Helvetica').text(`Mobile:`, 35, donorTextY);
-      doc.fillColor('#0f172a').text(data.mobileNumber, 80, donorTextY);
+      // Map category to Hindi equivalent
+      const getCategoryHindi = (cat: string) => {
+        switch (cat) {
+          case 'GENERAL': return 'सामान्य दान';
+          case 'COW_FEEDING': return 'गौ ग्रास / चारा सेवा';
+          case 'MEDICAL_SUPPORT': return 'गौ चिकित्सा सेवा';
+          case 'COW_ADOPTION': return 'गौ गोद सेवा';
+          case 'SHELTER_MAINTENANCE': return 'आवास रख-रखाव';
+          case 'FESTIVAL': return 'उत्सव सेवा दान';
+          case 'GAU_SEVA': return 'गौ सेवा संकल्प';
+          default: return cat;
+        }
+      };
+      doc.font('Devanagari-Bold').fontSize(12).fillColor('#1e1b4b').text(getCategoryHindi(data.category), 80, y - 1);
       
-      donorTextY += 16;
-      doc.fillColor('#475569').text(`PAN:`, 35, donorTextY);
-      doc.fillColor('#0f172a').text(data.panNumber || 'N/A', 80, donorTextY);
-      
-      donorTextY += 16;
-      doc.fillColor('#475569').text(`Address:`, 35, donorTextY);
-      doc.fillColor('#0f172a').font('Helvetica-Bold').text(data.address, 80, donorTextY, { width: 140, height: 20 });
+      doc.font('Devanagari').fontSize(11).fillColor('#374151').text('हेतु सधन्यवाद प्राप्त हुयें।', doc.page.width - 170, y);
+      // Underline for category
+      doc.moveTo(75, y + 14).lineTo(doc.page.width - 180, y + 14).lineWidth(0.5).dash(2, { space: 2 }).strokeColor('#9ca3af').stroke().undash();
 
-      // --- DONATION PARTICULARS ---
-      const rightBoxX = (doc.page.width - 70) / 2 + 35;
-      doc.rect(rightBoxX, 135, (doc.page.width - 70) / 2 + 5, 105).lineWidth(0.5).strokeColor('#cbd5e1').stroke();
+      // --- 8. BOTTOM BOXES & SIGNATURES ---
+      // Rs. Box
+      doc.rect(25, 198, 120, 32).lineWidth(1.5).strokeColor('#881337').stroke();
+      doc.rect(26, 199, 118, 30).fill('#fae8ff');
+      doc.font('Devanagari-Bold').fontSize(13.5).fillColor('#881337').text('रु.', 32, 206);
+      doc.font('Helvetica-Bold').fontSize(14).text(`${data.amount}/-`, 55, 206);
 
-      // Header for Donation Box
-      doc.fillColor('#be490e').font('Helvetica-Bold').fontSize(9).text('Donation Details', rightBoxX + 5, 142);
+      // Payment Details
+      doc.font('Devanagari').fontSize(8.5).fillColor('#4b5563');
+      doc.text(`भुगतान माध्यम: ${data.paymentMethod}`, 155, 201);
+      if (data.transactionId) {
+        doc.font('Helvetica').fontSize(8.5).text(`Txn ID: ${data.transactionId}`, 155, 214);
+      } else {
+        doc.font('Devanagari').fontSize(8.5).text('Q.R / Cash रिसीव्ड', 155, 214);
+      }
 
-      let donationTextY = 158;
-      doc.fillColor('#475569').font('Helvetica').fontSize(8.5);
-      doc.text(`Category:`, rightBoxX + 5, donationTextY);
-      doc.fillColor('#0f172a').font('Helvetica-Bold').text(data.category.replace('_', ' '), rightBoxX + 60, donationTextY);
+      // Signature Area (हस्ताक्षर)
+      doc.font('Devanagari').fontSize(9).fillColor('#4b5563');
+      doc.text('हस्ताक्षर', doc.page.width - 90, 198);
+      // Simulated signature
+      doc.font('Courier-BoldOblique').fontSize(12).fillColor('#1e1b4b').text('Shalu', doc.page.width - 95, 213);
 
-      donationTextY += 16;
-      doc.fillColor('#475569').font('Helvetica').text(`Mode:`, rightBoxX + 5, donationTextY);
-      doc.fillColor('#0f172a').text(data.paymentMethod, rightBoxX + 60, donationTextY);
-
-      donationTextY += 16;
-      doc.fillColor('#475569').text(`Txn ID:`, rightBoxX + 5, donationTextY);
-      doc.fillColor('#0f172a').text(data.transactionId || 'N/A', rightBoxX + 60, donationTextY);
-
-      donationTextY += 16;
-      doc.fillColor('#475569').text(`Amount:`, rightBoxX + 5, donationTextY);
-      doc.fillColor('#be490e').font('Helvetica-Bold').fontSize(11).text(`INR ${data.amount.toLocaleString('en-IN')}/-`, rightBoxX + 60, donationTextY - 1);
-
-      // --- AMOUNT IN WORDS ---
-      doc.rect(30, 250, doc.page.width - 60, 24).lineWidth(0.5).strokeColor('#cbd5e1').stroke();
-      doc.fillColor('#475569').font('Helvetica').fontSize(8.5).text('Amount in words: ', 35, 258);
-      doc.fillColor('#0f172a').font('Helvetica-Bold').text(numberToWords(data.amount), 120, 258);
-
-      // --- SIGNATURE AND THANKS ---
-      // Slogan/Quote
-      doc.fillColor('#be490e')
-         .fontSize(9)
-         .font('Helvetica-Oblique')
-         .text('“Serving Cows is Serving Lord Krishna. Thank you for your generous support.”', 30, 282, { width: 300 });
-
-      // Cursive digital signature simulation
-      doc.fillColor('#0f172a')
-         .font('Courier-BoldOblique')
-         .fontSize(12)
-         .text('Shree Sawariya Seth', doc.page.width - 170, 276);
-      
-      // Signature line and label
-      doc.moveTo(doc.page.width - 180, 290).lineTo(doc.page.width - 30, 290).lineWidth(0.5).strokeColor('#64748b').stroke();
-      doc.fillColor('#475569')
-         .fontSize(7.5)
-         .font('Helvetica-Bold')
-         .text('Authorized Signatory', doc.page.width - 140, 294);
+      // --- 9. CONTACT LINE ---
+      doc.moveTo(22, 240).lineTo(doc.page.width - 22, 240).lineWidth(0.5).strokeColor('#cbd5e1').stroke();
+      doc.font('Devanagari').fontSize(8).fillColor('#6b7280');
+      doc.text('📞 संपर्क सूत्र (टोंक गौशाला): 8905859570, 8003445051, 9119284593, 9529266713, 9636098819', 25, 246, { align: 'center', width: doc.page.width - 50 });
 
       doc.end();
 
