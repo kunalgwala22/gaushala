@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-saffron-500 selection:text-white;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(247, 129, 30, 0.03) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.02) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(247, 129, 30, 0.01) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-950;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-800 rounded-full hover:bg-slate-700 transition-colors;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-2xl shadow-glass transition-all duration-300;
+  }
+  .glass-card:hover {
+    @apply border-slate-700/60 shadow-glass-hover bg-slate-900/70;
+  }
+  .glass-input {
+    @apply bg-slate-950/50 border border-slate-850 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-saffron-500 focus:ring-1 focus:ring-saffron-500 transition-all duration-200;
+  }
+  .btn-primary {
+    @apply bg-gradient-to-r from-saffron-500 to-saffron-600 hover:from-saffron-600 hover:to-saffron-700 text-white font-medium px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-saffron-500/10 hover:shadow-saffron-500/20 focus:outline-none active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-200 font-medium px-5 py-2.5 rounded-xl transition-all duration-200 focus:outline-none active:scale-[0.98];
+  }
+  .btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white font-medium px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-red-500/10 active:scale-[0.98];
+  }
+}
+
+/* Page transitions animations helper */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+.page-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 300ms, transform 300ms;
+}

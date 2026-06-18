@@ -1,0 +1,32 @@
+# Node dependencies
+node_modules/
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+
+# Local static uploads (receipts and uploaded cow pictures)
+backend/uploads/receipts/*.pdf
+backend/uploads/cows/*
+!backend/uploads/cows/sample-cow.jpg
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System files
+.DS_Store
+Thumbs.db
