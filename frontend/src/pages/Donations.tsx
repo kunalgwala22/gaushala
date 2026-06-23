@@ -60,7 +60,7 @@ export const Donations: React.FC = () => {
   const selectedPaymentMethod = watch('paymentMethod');
 
   // Fetch Donations Query
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['donations', page, search, categoryFilter],
     queryFn: async () => {
       const res = await api.get('/donations', {
@@ -203,6 +203,11 @@ export const Donations: React.FC = () => {
             <span className="inline-block w-8 h-8 rounded-full border-4 border-slate-800 border-t-saffron-500 animate-spin mb-2"></span>
             <p>Loading transaction database...</p>
           </div>
+        ) : isError ? (
+          <div className="p-12 text-center text-red-400">
+            <p className="font-semibold">Failed to load donations.</p>
+            <p className="text-xs text-slate-500 mt-1">{(error as any)?.response?.data?.message || error.message}</p>
+          </div>
         ) : !data?.donations || data.donations.length === 0 ? (
           <div className="p-12 text-center text-slate-500">
             No donations logged under this criteria.
@@ -324,6 +329,12 @@ export const Donations: React.FC = () => {
                   <X size={18} />
                 </button>
               </div>
+
+              {createMutation.isError && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs px-4 py-3 rounded-xl mb-4">
+                  {(createMutation.error as any)?.response?.data?.message || createMutation.error.message}
+                </div>
+              )}
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 {/* Search Donor for selection */}

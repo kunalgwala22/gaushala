@@ -178,33 +178,47 @@ export const createDonation = async (req: AuthenticatedRequest, res: Response, n
 
     await newDonation.save();
 
-    // 3. Generate receipt PDF
-    const pdfRelativePath = await generateReceiptPDF({
-      receiptNumber,
-      donorName: donor.fullName,
-      mobileNumber: donor.mobileNumber,
-      panNumber: donor.panNumber,
-      address: `${donor.address}, ${donor.city}, ${donor.state} - ${donor.pincode}`,
-      amount: validatedData.amount,
-      category: validatedData.category,
-      paymentMethod: validatedData.paymentMethod,
-      transactionId: validatedData.transactionId,
-      date: donationDate,
-    });
+    let receiptSaved = false;
+    let newReceiptId: any = null;
+    try {
+      // 3. Generate receipt PDF
+      const pdfRelativePath = await generateReceiptPDF({
+        receiptNumber,
+        donorName: donor.fullName,
+        mobileNumber: donor.mobileNumber,
+        panNumber: donor.panNumber,
+        address: `${donor.address}, ${donor.city}, ${donor.state} - ${donor.pincode}`,
+        amount: validatedData.amount,
+        category: validatedData.category,
+        paymentMethod: validatedData.paymentMethod,
+        transactionId: validatedData.transactionId,
+        date: donationDate,
+      });
 
-    // 4. Save the Receipt record
-    const newReceipt = new Receipt({
-      receiptNumber,
-      donationId: newDonation._id,
-      pdfUrl: pdfRelativePath,
-      generatedAt: new Date(),
-    });
+      // 4. Save the Receipt record
+      const newReceipt = new Receipt({
+        receiptNumber,
+        donationId: newDonation._id,
+        pdfUrl: pdfRelativePath,
+        generatedAt: new Date(),
+      });
 
-    await newReceipt.save();
+      await newReceipt.save();
+      receiptSaved = true;
+      newReceiptId = newReceipt._id;
 
-    // 5. Update Donation with the receipt reference
-    newDonation.receiptId = newReceipt._id as any;
-    await newDonation.save();
+      // 5. Update Donation with the receipt reference
+      newDonation.receiptId = newReceipt._id as any;
+      await newDonation.save();
+    } catch (err) {
+      if (newDonation._id) {
+        await Donation.findByIdAndDelete(newDonation._id);
+      }
+      if (receiptSaved && newReceiptId) {
+        await Receipt.findByIdAndDelete(newReceiptId);
+      }
+      throw err;
+    }
 
     // 6. Handle Recurring Donation Schedule if applicable
     if (validatedData.type !== 'ONE_TIME' && validatedData.type !== 'CUSTOM') {

@@ -83,8 +83,8 @@ export async function generateReceiptPDF(data: PDFReceiptInput): Promise<string>
       doc.pipe(writeStream);
 
       // Register Devanagari Fonts
-      const regularFontPath = '/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf';
-      const boldFontPath = '/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf';
+      const regularFontPath = path.join(__dirname, '../assets/fonts/NotoSansDevanagari-Regular.ttf');
+      const boldFontPath = path.join(__dirname, '../assets/fonts/NotoSansDevanagari-Bold.ttf');
 
       doc.registerFont('Devanagari', regularFontPath);
       doc.registerFont('Devanagari-Bold', boldFontPath);
