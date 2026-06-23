@@ -4,7 +4,8 @@ import {
   getDonationById, 
   createDonation, 
   updateDonation, 
-  deleteDonation 
+  deleteDonation,
+  getDonationReceipt
 } from '../controllers/donationController';
 import { authenticate, authorize } from '../middleware/auth';
 
@@ -13,6 +14,7 @@ const router = Router();
 // Get donations - open to all authenticated roles (restricted inside controller for Donors)
 router.get('/', authenticate, getDonations);
 router.get('/:id', authenticate, getDonationById);
+router.get('/:id/receipt', authenticate, getDonationReceipt);
 
 // Record and modify donations - Admin and Staff only
 router.post('/', authenticate, authorize(['ADMIN', 'STAFF']), createDonation);

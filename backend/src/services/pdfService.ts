@@ -70,9 +70,17 @@ function writeMixedText(
 export async function generateReceiptPDF(data: PDFReceiptInput): Promise<string> {
   return new Promise((resolve, reject) => {
     try {
-      const dirPath = path.join(__dirname, '../../uploads/receipts');
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
+      let dirPath = path.join(__dirname, '../../uploads/receipts');
+      try {
+        if (!fs.existsSync(dirPath)) {
+          fs.mkdirSync(dirPath, { recursive: true });
+        }
+      } catch (mkdirError) {
+        // Fallback for read-only filesystems like Vercel serverless environment
+        dirPath = '/tmp/uploads/receipts';
+        if (!fs.existsSync(dirPath)) {
+          fs.mkdirSync(dirPath, { recursive: true });
+        }
       }
 
       const fileName = `RECEIPT_${data.receiptNumber.replace(/\//g, '_')}.pdf`;

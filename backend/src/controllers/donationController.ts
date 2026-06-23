@@ -326,3 +326,125 @@ export const deleteDonation = async (req: AuthenticatedRequest, res: Response, n
     next(error);
   }
 };
+
+/**
+ * Dynamic on-the-fly receipt generator/retriever
+ */
+export const getDonationReceipt = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const donation = await Donation.findById(req.params.id)
+      .populate('donorId', 'fullName mobileNumber email panNumber address city state pincode')
+      .populate('receiptId');
+
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found.' });
+    }
+
+    // Restrict donors to their own records
+    const donorIdStr = (donation.donorId as any)._id?.toString() || donation.donorId.toString();
+    if (req.user && req.user.role === 'DONOR' && donorIdStr !== req.user.donorId) {
+      return res.status(403).json({ message: 'Forbidden: Access denied.' });
+    }
+
+    let receipt: any = donation.receiptId;
+
+    // If receipt doesn't exist, we must generate a new one!
+    if (!receipt) {
+      // 1. Calculate Receipt Number based on Financial Year (April - March)
+      const donationDate = donation.date || new Date();
+      const currentYear = donationDate.getFullYear();
+      const currentMonth = donationDate.getMonth();
+      
+      let startYear = currentYear;
+      if (currentMonth < 3) {
+        startYear = currentYear - 1;
+      }
+      const endYear = (startYear + 1) % 100;
+      const finYearStr = `${startYear}-${endYear.toString().padStart(2, '0')}`;
+
+      // Find the sequence for the current financial year
+      const lastReceipt = await Receipt.findOne({
+        receiptNumber: new RegExp(`SSSG/${finYearStr}/`),
+      }).sort({ createdAt: -1 });
+
+      let seq = 1;
+      if (lastReceipt) {
+        const parts = lastReceipt.receiptNumber.split('/');
+        const lastSeq = parseInt(parts[parts.length - 1]);
+        if (!isNaN(lastSeq)) {
+          seq = lastSeq + 1;
+        }
+      }
+      const receiptNumber = `SSSG/${finYearStr}/${seq.toString().padStart(4, '0')}`;
+
+      const donor: any = donation.donorId;
+
+      // 2. Generate receipt PDF
+      const pdfRelativePath = await generateReceiptPDF({
+        receiptNumber,
+        donorName: donor.fullName,
+        mobileNumber: donor.mobileNumber,
+        panNumber: donor.panNumber,
+        address: `${donor.address}, ${donor.city}, ${donor.state} - ${donor.pincode}`,
+        amount: donation.amount,
+        category: donation.category,
+        paymentMethod: donation.paymentMethod,
+        transactionId: donation.transactionId,
+        date: donationDate,
+      });
+
+      // 3. Save the Receipt record
+      const newReceipt = new Receipt({
+        receiptNumber,
+        donationId: donation._id,
+        pdfUrl: pdfRelativePath,
+        generatedAt: new Date(),
+      });
+
+      await newReceipt.save();
+
+      // 4. Update Donation with the receipt reference
+      donation.receiptId = newReceipt._id as any;
+      await donation.save();
+
+      receipt = newReceipt;
+    } else {
+      // If receipt exists but PDF is missing, regenerate it!
+      const fileName = `RECEIPT_${receipt.receiptNumber.replace(/\//g, '_')}.pdf`;
+      const localPath = path.join(__dirname, '../../uploads/receipts', fileName);
+      const tmpPath = path.join('/tmp/uploads/receipts', fileName);
+
+      if (!fs.existsSync(localPath) && !fs.existsSync(tmpPath)) {
+        const donor: any = donation.donorId;
+        await generateReceiptPDF({
+          receiptNumber: receipt.receiptNumber,
+          donorName: donor.fullName,
+          mobileNumber: donor.mobileNumber,
+          panNumber: donor.panNumber,
+          address: `${donor.address}, ${donor.city}, ${donor.state} - ${donor.pincode}`,
+          amount: donation.amount,
+          category: donation.category,
+          paymentMethod: donation.paymentMethod,
+          transactionId: donation.transactionId,
+          date: donation.date,
+        });
+      }
+    }
+
+    // Now send the file
+    const fileName = `RECEIPT_${receipt.receiptNumber.replace(/\//g, '_')}.pdf`;
+    const localPath = path.join(__dirname, '../../uploads/receipts', fileName);
+    const tmpPath = path.join('/tmp/uploads/receipts', fileName);
+
+    if (fs.existsSync(localPath)) {
+      return res.sendFile(localPath);
+    }
+    if (fs.existsSync(tmpPath)) {
+      return res.sendFile(tmpPath);
+    }
+
+    return res.status(500).json({ message: 'Failed to retrieve or generate receipt PDF.' });
+  } catch (error) {
+    next(error);
+  }
+};

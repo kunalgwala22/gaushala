@@ -101,11 +101,13 @@ export const Profile: React.FC = () => {
     }
   };
 
-  const handleDownloadReceipt = (pdfUrl?: string) => {
+  const handleDownloadReceipt = (donationId: string, pdfUrl?: string) => {
+    const token = localStorage.getItem('accessToken');
+    const tokenParam = token ? `?token=${token}` : '';
     if (pdfUrl) {
       window.open(`${getBackendUrl()}${pdfUrl}`, '_blank');
     } else {
-      alert('Receipt PDF is not available.');
+      window.open(`${getBackendUrl()}/api/donations/${donationId}/receipt${tokenParam}`, '_blank');
     }
   };
 
@@ -291,7 +293,7 @@ export const Profile: React.FC = () => {
                       </div>
 
                       <button
-                        onClick={() => handleDownloadReceipt(d.receiptId?.pdfUrl)}
+                        onClick={() => handleDownloadReceipt(d._id, d.receiptId?.pdfUrl)}
                         className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-1.5 border-slate-800 hover:border-slate-700"
                       >
                         <Download size={13} />

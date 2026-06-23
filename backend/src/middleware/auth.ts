@@ -19,12 +19,18 @@ export interface AuthenticatedRequest extends Request {
  * Middleware to authenticate requests via JWT access token
  */
 export const authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  let token: string | undefined;
+
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Authorization token required. Please login.' });
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.query && req.query.token) {
+    token = req.query.token as string;
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: 'Authorization token required. Please login.' });
+  }
 
   try {
     const decoded = jwt.verify(token, JWT_ACCESS_SECRET) as TokenPayload;

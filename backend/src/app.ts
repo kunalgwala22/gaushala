@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
 import dotenv from 'dotenv';
+import fs from 'fs';
 
 // Load environment variables
 dotenv.config();
@@ -40,6 +41,73 @@ app.use('/api', apiRateLimiter);
 
 // Serve static uploads (receipts, cow photos)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static('/tmp/uploads'));
+
+// On-the-fly PDF receipt generator and serving middleware for Vercel/serverless environments
+app.get('/uploads/receipts/:filename', async (req, res, next) => {
+  try {
+    const { filename } = req.params;
+    const localPath = path.join(__dirname, '../uploads/receipts', filename);
+    const tmpPath = path.join('/tmp/uploads/receipts', filename);
+
+    if (fs.existsSync(localPath)) {
+      return res.sendFile(localPath);
+    }
+    if (fs.existsSync(tmpPath)) {
+      return res.sendFile(tmpPath);
+    }
+
+    const match = filename.match(/^RECEIPT_(SSSG_[0-9-]+_[0-9]+)\.pdf$/);
+    if (!match) {
+      return next();
+    }
+
+    const receiptNumber = match[1].replace(/_/g, '/');
+
+    // Import models and service dynamically to avoid circular dependencies
+    const { Receipt } = await import('./models/Receipt');
+    const { generateReceiptPDF } = await import('./services/pdfService');
+
+    const receipt = await Receipt.findOne({ receiptNumber }).populate({
+      path: 'donationId',
+      populate: { path: 'donorId' }
+    });
+
+    if (!receipt || !receipt.donationId) {
+      return res.status(404).json({ message: 'Receipt not found.' });
+    }
+
+    const donation: any = receipt.donationId;
+    const donor = donation.donorId;
+    if (!donor) {
+      return res.status(404).json({ message: 'Donor not found.' });
+    }
+
+    await generateReceiptPDF({
+      receiptNumber: receipt.receiptNumber,
+      donorName: donor.fullName,
+      mobileNumber: donor.mobileNumber,
+      panNumber: donor.panNumber,
+      address: `${donor.address}, ${donor.city}, ${donor.state} - ${donor.pincode}`,
+      amount: donation.amount,
+      category: donation.category,
+      paymentMethod: donation.paymentMethod,
+      transactionId: donation.transactionId,
+      date: donation.date,
+    });
+
+    if (fs.existsSync(tmpPath)) {
+      return res.sendFile(tmpPath);
+    }
+    if (fs.existsSync(localPath)) {
+      return res.sendFile(localPath);
+    }
+
+    return res.status(500).json({ message: 'Failed to generate PDF on the fly.' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Mount API Routes
 app.use('/api/auth', authRoutes);

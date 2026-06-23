@@ -122,11 +122,13 @@ export const Donations: React.FC = () => {
     }
   };
 
-  const downloadPDFReceipt = (pdfUrl?: string) => {
+  const downloadPDFReceipt = (donationId: string, pdfUrl?: string) => {
+    const token = localStorage.getItem('accessToken');
+    const tokenParam = token ? `?token=${token}` : '';
     if (pdfUrl) {
       window.open(`${getBackendUrl()}${pdfUrl}`, '_blank');
     } else {
-      alert('Receipt PDF is still generating or unavailable.');
+      window.open(`${getBackendUrl()}/api/donations/${donationId}/receipt${tokenParam}`, '_blank');
     }
   };
 
@@ -262,7 +264,7 @@ export const Donations: React.FC = () => {
                     <td className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => downloadPDFReceipt(donation.receiptId?.pdfUrl)}
+                          onClick={() => downloadPDFReceipt(donation._id, donation.receiptId?.pdfUrl)}
                           className="p-2 rounded-lg bg-saffron-500/10 hover:bg-saffron-500/20 text-saffron-400 hover:text-saffron-300 transition-colors flex items-center gap-1.5 text-xs font-semibold"
                           title="Download PDF"
                         >
