@@ -17,7 +17,6 @@ const ReceiptSchema = new Schema<IReceipt>(
   { timestamps: true }
 );
 
-ReceiptSchema.index({ receiptNumber: 1 });
 ReceiptSchema.index({ donationId: 1 });
 
 export const Receipt = model<IReceipt>('Receipt', ReceiptSchema);

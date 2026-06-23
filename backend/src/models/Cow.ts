@@ -39,7 +39,6 @@ const CowSchema = new Schema<ICow>(
   { timestamps: true }
 );
 
-CowSchema.index({ tagNumber: 1 });
 CowSchema.index({ healthStatus: 1 });
 
 export const Cow = model<ICow>('Cow', CowSchema);
