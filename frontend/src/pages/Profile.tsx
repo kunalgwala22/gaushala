@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../services/api';
+import { api, getBackendUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -103,7 +103,7 @@ export const Profile: React.FC = () => {
 
   const handleDownloadReceipt = (pdfUrl?: string) => {
     if (pdfUrl) {
-      window.open(`http://localhost:5001${pdfUrl}`, '_blank');
+      window.open(`${getBackendUrl()}${pdfUrl}`, '_blank');
     } else {
       alert('Receipt PDF is not available.');
     }

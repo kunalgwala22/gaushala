@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../services/api';
+import { api, getBackendUrl } from '../services/api';
 import type { Donation, Donor } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useForm } from 'react-hook-form';
@@ -99,7 +99,7 @@ export const Donations: React.FC = () => {
       // Auto trigger download of receipt
       const pdfPath = res.data.donation?.receiptId?.pdfUrl;
       if (pdfPath) {
-        window.open(`http://localhost:5001${pdfPath}`, '_blank');
+        window.open(`${getBackendUrl()}${pdfPath}`, '_blank');
       }
     },
   });
@@ -124,7 +124,7 @@ export const Donations: React.FC = () => {
 
   const downloadPDFReceipt = (pdfUrl?: string) => {
     if (pdfUrl) {
-      window.open(`http://localhost:5001${pdfUrl}`, '_blank');
+      window.open(`${getBackendUrl()}${pdfUrl}`, '_blank');
     } else {
       alert('Receipt PDF is still generating or unavailable.');
     }

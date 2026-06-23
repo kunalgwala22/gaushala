@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../services/api';
+import { api, getBackendUrl } from '../services/api';
 import type { Cow, HealthStatus } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useForm } from 'react-hook-form';
@@ -250,7 +250,7 @@ export const Cows: React.FC = () => {
               <div className="h-44 bg-slate-950 flex items-center justify-center relative overflow-hidden">
                 {cow.photoUrl && !cow.photoUrl.includes('sample-cow') ? (
                   <img
-                    src={`http://localhost:5001${cow.photoUrl}`}
+                    src={`${getBackendUrl()}${cow.photoUrl}`}
                     alt={cow.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
