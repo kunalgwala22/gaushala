@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  LayoutDashboard, 
-  Users, 
-  HeartHandshake, 
-  Heart, 
-  BarChart3, 
-  UserSquare, 
-  LogOut, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Users,
+  HeartHandshake,
+  Heart,
+  BarChart3,
+  UserSquare,
+  LogOut,
+  Menu,
   X,
   PlusCircle
 } from 'lucide-react';
@@ -100,11 +100,10 @@ export const DashboardLayout: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-gradient-to-r from-saffron-500/10 to-saffron-600/5 border border-saffron-500/30 text-saffron-400' 
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
+                    ? 'bg-gradient-to-r from-saffron-500/10 to-saffron-600/5 border border-saffron-500/30 text-saffron-400'
                     : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/50 border border-transparent'
-                }`}
+                  }`}
               >
                 <Icon size={18} className={isActive ? 'text-saffron-500' : 'text-slate-400'} />
                 {item.label}
@@ -179,11 +178,10 @@ export const DashboardLayout: React.FC = () => {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                      isActive 
-                        ? 'bg-saffron-500/10 border border-saffron-500/30 text-saffron-400' 
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
+                        ? 'bg-saffron-500/10 border border-saffron-500/30 text-saffron-400'
                         : 'text-slate-400 hover:text-slate-100 hover:bg-slate-850'
-                    }`}
+                      }`}
                   >
                     <Icon size={18} className={isActive ? 'text-saffron-500' : 'text-slate-400'} />
                     {item.label}

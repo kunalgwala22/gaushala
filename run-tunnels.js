@@ -21,8 +21,8 @@ function extractUrl(data, service) {
 
 let apiProc = null;
 let portalProc = null;
-let apiService = 'serveo';
-let portalService = 'serveo';
+let apiService = 'localhost.run';
+let portalService = 'localhost.run';
 let currentApiUrl = '';
 let currentPortalUrl = '';
 
@@ -86,18 +86,18 @@ function startTunnel(port, service, callback) {
 }
 
 function startTunnelWithFallback(port, callback) {
-  startTunnel(port, 'serveo', (err, url, proc) => {
+  startTunnel(port, 'localhost.run', (err, url, proc) => {
     if (err) {
-      console.log(`serveo.net failed for port ${port}. Trying localhost.run...`);
-      startTunnel(port, 'localhost.run', (err2, url2, proc2) => {
+      console.log(`localhost.run failed for port ${port}. Trying serveo.net...`);
+      startTunnel(port, 'serveo', (err2, url2, proc2) => {
         if (err2) {
           callback(new Error(`Both tunnel services failed for port ${port}: ${err2.message}`));
         } else {
-          callback(null, url2, proc2, 'localhost.run');
+          callback(null, url2, proc2, 'serveo');
         }
       });
     } else {
-      callback(null, url, proc, 'serveo');
+      callback(null, url, proc, 'localhost.run');
     }
   });
 }
